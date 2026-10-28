@@ -1,0 +1,2045 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description"
+    content="Laboratório de recomendação cultural: explore perfis, confira a matemática e questione as escolhas do modelo.">
+  <title>Consumo cultural · Recomendação por similaridade</title>
+  <style>
+    :root {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      color: #253039;
+      background: #fff;
+      --ink: #253039;
+      --muted: #586771;
+      --line: #dbe1e5;
+      --accent: #315a70;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button,
+    a,
+    input,
+    select,
+    summary {
+      touch-action: manipulation;
+    }
+
+    button,
+    select,
+    summary {
+      cursor: pointer;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: .55;
+    }
+
+    a {
+      color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    :focus-visible {
+      outline: 2px solid #24618a;
+      outline-offset: 3px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 22px;
+      line-height: 1.35;
+      font-weight: 600;
+      margin: 0 0 3px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.45;
+      margin: 0 0 8px;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.5;
+      margin: 0 0 7px;
+    }
+
+    p {
+      line-height: 1.65;
+    }
+
+    small,
+    .small {
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .muted,
+    .detail-note {
+      color: var(--muted);
+    }
+
+    .wrap {
+      max-width: 1370px;
+      margin: auto;
+      padding: 0 30px;
+    }
+
+    .topbar {
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      min-height: 88px;
+      padding-top: 15px;
+      padding-bottom: 15px;
+    }
+
+    .topline p {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .source-tools {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      position: relative;
+    }
+
+    .file-hint {
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .data-tools {
+      border: 0;
+      padding: 0;
+      margin: 0;
+    }
+
+    .data-tools>summary {
+      color: var(--accent);
+      font-weight: 500;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .data-tools[open]>summary {
+      margin: 0;
+    }
+
+    .source-menu {
+      position: absolute;
+      z-index: 5;
+      right: 0;
+      top: calc(100% + 12px);
+      width: 310px;
+      padding: 17px;
+      border: 1px solid #b7c4cc;
+      background: #fff;
+    }
+
+    .source-menu p {
+      font-size: 12px;
+      margin: 0 0 12px;
+      color: var(--muted);
+    }
+
+    .source-menu .button {
+      width: 100%;
+      text-align: left;
+      margin-top: 9px;
+    }
+
+    .file-control {
+      position: relative;
+      display: block;
+    }
+
+    .file-control input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-control:focus-within {
+      outline: 2px solid #24618a;
+      outline-offset: 3px;
+    }
+
+    .button {
+      display: inline-block;
+      border: 1px solid #b6c2ca;
+      border-radius: 2px;
+      background: #fff;
+      color: #294b60;
+      padding: 8px 12px;
+      min-height: 37px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .button:hover {
+      background: #eef3f6;
+    }
+
+    .primary {
+      background: #315a70;
+      border-color: #315a70;
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: #24465a;
+    }
+
+    .load-status {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 0;
+      min-height: 42px;
+    }
+
+    #status {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    #status[data-error=true] {
+      color: #9c2d2d;
+    }
+
+    .initial {
+      padding: 24px 0 38px;
+      max-width: 700px;
+    }
+
+    .initial p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: flex;
+      gap: 14px 42px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .stat-value {
+      display: flex;
+      gap: 7px;
+      align-items: baseline;
+    }
+
+    .stat strong {
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: start;
+      gap: 18px 26px;
+      padding: 18px 0;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field.student {
+      flex: 1;
+      min-width: 210px;
+      max-width: 355px;
+    }
+
+    .field label,
+    .control-label {
+      color: #445661;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    select {
+      border: 1px solid #b5c2cb;
+      border-radius: 2px;
+      background: #fff;
+      color: var(--ink);
+      max-width: 100%;
+      min-height: 45px;
+      padding: 7px 30px 7px 10px;
+      font-size: 14px;
+    }
+
+    .segmented {
+      display: flex;
+    }
+
+    .segmented button {
+      padding: 5px 13px;
+      border: 1px solid #b5c2cb;
+      border-radius: 0;
+      background: #fff;
+      text-align: left;
+      min-height: 45px;
+    }
+
+    .segmented button+button {
+      margin-left: -1px;
+    }
+
+    .segmented button[aria-pressed=true] {
+      position: relative;
+      background: #eaf0f4;
+      border-color: #52778e;
+      color: #24495f;
+    }
+
+    .segmented strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .segmented small {
+      display: block;
+      color: #5d7484;
+      font-size: 11px;
+    }
+
+    .field-note {
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+      color: var(--muted);
+      max-width: 350px;
+    }
+
+    .view-tabs {
+      display: flex;
+      gap: 28px;
+      border-bottom: 1px solid #b7c6d0;
+    }
+
+    .view-tabs button {
+      border: 0;
+      border-bottom: 3px solid transparent;
+      background: none;
+      padding: 11px 0;
+      min-height: 43px;
+      color: #586e7c;
+      font-size: 14px;
+    }
+
+    .view-tabs button[aria-selected=true] {
+      border-bottom-color: #315a70;
+      font-weight: 600;
+      color: #25495f;
+    }
+
+    .view-guide {
+      margin: 13px 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    [role=tabpanel] {
+      padding-top: 24px;
+    }
+
+    .view-guide:not([hidden])+[role=tabpanel] {
+      padding-top: 0;
+    }
+
+    section {
+      scroll-margin-top: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+      gap: 34px;
+      align-items: start;
+    }
+
+    .stack {
+      border-left: 1px solid var(--line);
+      padding-left: 25px;
+      display: grid;
+      gap: 27px;
+      min-width: 0;
+    }
+
+    .card {
+      min-width: 0;
+    }
+
+    .cardhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 14px;
+      margin-bottom: 15px;
+    }
+
+    .cardhead p {
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .badge {
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    #rec-count,
+    #matrix-mode {
+      font-size: 12px;
+    }
+
+    #rec-count {
+      display: block;
+      white-space: nowrap;
+      padding-top: 3px;
+    }
+
+    .profile-name {
+      font-size: 20px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+      margin-bottom: 3px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 25px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: #ecf0f3;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: #64889e;
+    }
+
+    .bar-row strong {
+      font-weight: 500;
+    }
+
+    .notice {
+      border-left: 2px solid #a3b5c0;
+      padding: 3px 0 3px 12px;
+      margin: 15px 0;
+      color: #51636f;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    details {
+      border-top: 1px solid var(--line);
+      padding-top: 11px;
+      margin-top: 14px;
+    }
+
+    summary {
+      font-size: 13px;
+      color: #315b75;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    details[open]>summary {
+      margin-bottom: 13px;
+    }
+
+    .detail-note {
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 10px 0;
+    }
+
+    .rec {
+      padding: 15px 0 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .rec:first-child {
+      padding-top: 0;
+    }
+
+    .rec-top {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .rank {
+      min-width: 21px;
+      padding-top: 27px;
+      color: #73838f;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rec-name {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rec h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .score {
+      text-align: right;
+      color: #284f67;
+      font-size: 19px;
+      font-weight: 600;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score small {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .score .help-button {
+      margin-left: auto;
+    }
+
+    .rec-origin {
+      color: #526874;
+      font-size: 13px;
+      margin: 8px 0 0 33px;
+      line-height: 1.7;
+    }
+
+    .comparison-detail {
+      margin-top: 5px;
+      padding-top: 2px;
+      border: 0;
+    }
+
+    .comparison-detail summary {
+      font-size: 12px;
+      color: #687f8e;
+    }
+
+    #more-recs {
+      margin-top: 17px;
+    }
+
+    .empty {
+      border-left: 2px solid #a3b5c0;
+      padding: 11px 16px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    .numeric {
+      font-family: Consolas, ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow: auto;
+      max-height: 420px;
+    }
+
+    table {
+      border-collapse: collapse;
+      text-align: left;
+      width: 100%;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e1e7eb;
+      vertical-align: top;
+      line-height: 1.55;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f4f7f9;
+      font-weight: 500;
+      color: #4d6574;
+    }
+
+    th[scope=row] {
+      font-weight: 400;
+      min-width: 100px;
+    }
+
+    td:not(:first-child) {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .column-title {
+      display: block;
+    }
+
+    .text-button {
+      color: #315a70;
+      border: 0;
+      padding: 2px 0;
+      background: none;
+      font-size: 12px;
+      min-height: 28px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .neighbor-name small {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .heatmap {
+      table-layout: fixed;
+      min-width: 790px;
+    }
+
+    .heatmap td,
+    .heatmap th {
+      padding: 5px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .heatmap th[scope=row],
+    .heatmap thead th:first-child {
+      width: 130px;
+      text-align: left;
+    }
+
+    .heatmap button:not(.help-button) {
+      border: 1px solid transparent;
+      width: 100%;
+      min-height: 36px;
+      border-radius: 0;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .heatmap button[aria-current=true] {
+      border: 2px solid #233f52;
+    }
+
+    .heatmap button:disabled {
+      opacity: 1;
+    }
+
+    .heatmap .help-button {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      margin-top: 12px;
+      color: var(--muted);
+    }
+
+    .gradient {
+      height: 7px;
+      width: 140px;
+      flex-shrink: 0;
+      background: linear-gradient(90deg, #f1f4f6, #2a5369);
+    }
+
+    .pair-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 16px 24px;
+      margin-bottom: 17px;
+    }
+
+    .pair-controls .field {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .full {
+      border-top: 1px solid var(--line);
+      margin-top: 28px;
+      padding-top: 23px;
+    }
+
+    .mathbox {
+      background: #f7f9fa;
+      border-left: 2px solid #88a3b4;
+      padding: 13px 16px;
+      margin-top: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    .formula {
+      font-family: Consolas, ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      margin: 8px 0;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 500;
+      color: #4a6577;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 20px 0;
+    }
+
+    .step {
+      min-width: 0;
+    }
+
+    .step>span {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .step p {
+      font-size: 13px;
+      margin: 9px 0 0;
+      overflow-wrap: anywhere;
+    }
+
+    .sectionline {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid #becbd4;
+      padding-bottom: 9px;
+      margin: 29px 0 20px;
+    }
+
+    .sectionline h2 {
+      margin: 0;
+    }
+
+    .sectionline span {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    [role=tabpanel]>.sectionline:first-child {
+      margin-top: 0;
+    }
+
+    .critical-intro {
+      font-size: 14px;
+      max-width: 900px;
+      color: #4d6473;
+    }
+
+    .loop {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 11px;
+      margin: 22px 0 25px;
+    }
+
+    .loop strong {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .loop span {
+      color: #7a8d99;
+    }
+
+    .critical-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+
+    .critical-grid p,
+    .critical .note {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .critical .note {
+      max-width: 980px;
+      margin-top: 22px;
+    }
+
+    .model-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 45px;
+    }
+
+    .model-grid p,
+    .model-grid li {
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .model-grid h3 {
+      margin-top: 20px;
+    }
+
+    .model-grid h3:first-child {
+      margin-top: 0;
+    }
+
+    .weight {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .weight-value {
+      text-align: right;
+    }
+
+    .quality-filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 20px;
+      margin: 18px 0;
+    }
+
+    .quality-filters .field {
+      flex: 1;
+      min-width: 150px;
+      max-width: 400px;
+    }
+
+    .quality-count {
+      display: inline-flex;
+      flex-direction: column;
+      font-size: 13px;
+      margin: 0 23px 11px 0;
+    }
+
+    code {
+      font-family: Consolas, ui-monospace, monospace;
+      font-size: .95em;
+      background: #eef3f6;
+      padding: 2px 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 18px;
+      font-size: 13px;
+    }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid var(--line);
+      padding: 18px 0 25px;
+      margin-top: 32px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .help-button {
+      display: block;
+      width: fit-content;
+      border: 0;
+      padding: 3px 0;
+      min-height: 25px;
+      font-size: 11px;
+      color: #607d90;
+      background: none;
+      text-align: left;
+      font-weight: 400;
+      text-decoration: underline;
+      text-decoration-color: #b2c3cf;
+      text-underline-offset: 3px;
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+
+    .help-button:hover {
+      color: #244d68;
+      text-decoration-color: #244d68;
+    }
+
+    .section-help {
+      margin-bottom: 7px;
+    }
+
+    dialog {
+      width: min(540px, calc(100% - 32px));
+      max-height: calc(100% - 48px);
+      overflow: auto;
+      border: 1px solid #9eafbb;
+      border-radius: 2px;
+      background: #fff;
+      color: var(--ink);
+      padding: 24px;
+    }
+
+    dialog::backdrop {
+      background: #203a4c66;
+    }
+
+    .dialog-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 17px;
+      padding-bottom: 14px;
+    }
+
+    .dialog-head h2 {
+      font-size: 18px;
+      margin: 3px 0 0;
+    }
+
+    #explanation-body p {
+      font-size: 14px;
+    }
+
+    #explanation-body pre {
+      font-size: 13px;
+      padding: 13px;
+      line-height: 1.7;
+      background: #f1f5f7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .skip {
+      position: absolute;
+      top: -90px;
+      left: 12px;
+      background: #294b60;
+      color: #fff;
+      padding: 11px;
+      z-index: 10;
+    }
+
+    .skip:focus {
+      top: 10px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 1000px) {
+      .wrap {
+        padding: 0 22px;
+      }
+
+      .grid {
+        grid-template-columns: minmax(0, 1.3fr) minmax(270px, 1fr);
+        gap: 23px;
+      }
+
+      .stack {
+        padding-left: 20px;
+      }
+
+      .model-grid {
+        gap: 27px;
+      }
+    }
+
+    @media (max-width: 730px) {
+      .wrap {
+        padding: 0 16px;
+      }
+
+      .topline {
+        align-items: start;
+        flex-direction: column;
+        gap: 11px;
+        padding-top: 16px;
+        padding-bottom: 15px;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+
+      .source-tools {
+        justify-content: space-between;
+        width: 100%;
+        gap: 10px;
+      }
+
+      .source-menu {
+        width: min(310px, calc(100vw - 32px));
+      }
+
+      .stats {
+        gap: 13px 27px;
+      }
+
+      .stat strong {
+        font-size: 19px;
+      }
+
+      .toolbar {
+        gap: 17px;
+      }
+
+      .field.student {
+        flex-basis: 100%;
+        max-width: none;
+        min-width: 0;
+      }
+
+      .toolbar .field {
+        max-width: 100%;
+      }
+
+      .field-note {
+        max-width: 310px;
+      }
+
+      .segmented button {
+        padding: 5px 10px;
+      }
+
+      .view-tabs {
+        gap: 10px;
+        justify-content: space-between;
+      }
+
+      .view-tabs button {
+        font-size: 12px;
+        flex: 1;
+      }
+
+      .grid,
+      .steps,
+      .critical-grid,
+      .model-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        gap: 27px;
+      }
+
+      .stack {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        padding-left: 0;
+        padding-top: 24px;
+      }
+
+      .cardhead {
+        gap: 10px;
+      }
+
+      .rec-top {
+        gap: 9px;
+      }
+
+      .rec-origin {
+        margin-left: 30px;
+      }
+
+      .score {
+        font-size: 17px;
+      }
+
+      .legend {
+        font-size: 11px;
+        gap: 8px;
+      }
+
+      .gradient {
+        width: 65px;
+      }
+
+      .pair-controls {
+        gap: 12px;
+      }
+
+      .pair-controls .field {
+        min-width: 130px;
+      }
+
+      .critical-grid,
+      .model-grid {
+        gap: 20px;
+      }
+
+      .load-status {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        scroll-behavior: smooth;
+      }
+    }
+
+    @media print {
+
+      .source-tools,
+      .load-status,
+      .toolbar,
+      .view-tabs,
+      .view-guide,
+      .pair-controls,
+      .quality-filters,
+      .help-button,
+      #more-recs,
+      footer,
+      dialog {
+        display: none !important;
+      }
+
+      .wrap {
+        padding: 0;
+      }
+
+      .grid,
+      .model-grid,
+      .critical-grid {
+        display: block;
+      }
+
+      .stack {
+        border: 0;
+        padding-left: 0;
+      }
+
+      [role=tabpanel][hidden] {
+        display: block !important;
+      }
+
+      .card {
+        break-inside: avoid;
+        margin-bottom: 20px;
+      }
+
+      .table-scroll {
+        max-height: none;
+        overflow: visible;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a href="#conteudo" class="skip">Ir para o conteúdo</a>
+  <header class="topbar">
+    <div class="wrap topline">
+      <div>
+        <h1>Consumo cultural</h1>
+        <p>Recomendações por similaridade · Desafios 6–9</p>
+      </div>
+      <div class="source-tools">
+        <span id="file-info" class="file-hint">Base: data.json</span>
+        <details id="data-tools" class="data-tools">
+          <summary>Trocar arquivo</summary>
+          <div class="source-menu">
+            <p>A página usa data.json da mesma pasta. Você também pode abrir outro arquivo do recomendador.</p>
+            <label class="file-control"><span class="button" id="file-button-label" aria-hidden="true">Abrir arquivo
+                JSON</span><span class="sr-only">Carregar arquivo JSON do recomendador</span><input id="arquivo"
+                type="file" accept=".json,application/json"></label>
+            <button type="button" id="reload-data" class="button">Recarregar data.json</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </header>
+  <main id="conteudo" class="wrap">
+    <div id="load-status" class="load-status" data-state="loading">
+      <p id="status" role="status" aria-live="polite">Carregando dados…</p>
+      <button type="button" id="retry-data" class="button" hidden>Tentar novamente</button>
+    </div>
+    <section id="initial" class="initial">
+      <h2 id="initial-title">Carregando dados da turma</h2>
+      <p id="initial-description">As recomendações aparecem assim que a base estiver disponível.</p>
+    </section>
+    <div id="workspace" aria-busy="true" hidden>
+      <div class="stats" id="stats" aria-label="Resumo da base"></div>
+      <div class="toolbar" aria-label="Configuração da análise">
+        <div class="field student"><label for="student">Estudante</label><select id="student"></select>
+        </div>
+        <div class="field"><span class="control-label" id="mode-label">Comparação entre perfis</span>
+          <div class="segmented" role="group" aria-labelledby="mode-label" aria-describedby="model-note"><button
+              type="button" data-mode="cosseno" aria-pressed="true"><strong>Itens em
+                comum</strong><small>Cosseno</small></button><button type="button" data-mode="hibrido"
+              aria-pressed="false"><strong>Mais características</strong><small>Híbrido · 5 blocos</small></button></div>
+          <p class="field-note" id="model-note" aria-live="polite">Compara os itens de consumo registrados.</p>
+        </div>
+        <div class="field"><label for="top-n">Sugestões</label><select id="top-n">
+            <option value="3">3 itens</option>
+            <option value="5" selected>5 itens</option>
+            <option value="10">10 itens</option>
+            <option value="20">20 itens</option>
+            <option value="all">Todos</option>
+          </select></div>
+      </div>
+      <div class="view-tabs" role="tablist" aria-label="Seções da análise">
+        <button type="button" role="tab" id="tab-perfil" data-view="perfil" aria-controls="perfil" aria-selected="true"
+          tabindex="0">Recomendações</button>
+        <button type="button" role="tab" id="tab-calculos" data-view="calculos" aria-controls="calculos"
+          aria-selected="false" tabindex="-1">Comparar perfis</button>
+        <button type="button" role="tab" id="tab-critica" data-view="critica-panel" aria-controls="critica-panel"
+          aria-selected="false" tabindex="-1">Modelo e dados</button>
+      </div>
+      <p id="view-guide" class="view-guide">Escolha um estudante acima e abra uma sugestão para conferir sua origem.</p>
+      <section id="perfil" role="tabpanel" aria-labelledby="tab-perfil" tabindex="0">
+        <div class="grid">
+          <article class="card" id="recomendacoes" aria-labelledby="recommendations-title">
+            <div class="cardhead">
+              <div>
+
+                <h2 id="recommendations-title" tabindex="-1">Itens recomendados</h2>
+                <p class="muted" id="rec-subtitle"></p>
+              </div>
+              <div><button type="button" class="help-button" data-explain="posicao" aria-haspopup="dialog"
+                  aria-controls="explanation-dialog"
+                  aria-label="Explicação: posição e quantidade de recomendações">Explicação</button><span class="badge"
+                  id="rec-count"></span></div>
+            </div>
+            <div id="recommendations"></div><button type="button" id="more-recs" class="button" hidden>Mostrar mais
+              sugestões</button>
+            <p class="detail-note">Um item ausente pode já ser conhecido ou consumido. As sugestões refletem apenas os
+              registros da planilha.</p>
+          </article>
+          <div class="stack">
+            <article class="card" aria-labelledby="profile-title">
+              <div class="cardhead">
+                <div>
+
+                  <h2 id="profile-title">Perfil de consumo</h2>
+                </div>
+              </div>
+              <div id="profile"></div>
+            </article>
+            <article class="card" aria-labelledby="neighbors-title">
+              <div class="cardhead">
+                <div>
+
+                  <h2 id="neighbors-title">Colegas com perfis semelhantes</h2>
+                  <p class="muted">Veja quais colegas ajudam a formar as sugestões. “Ver cálculo” abre a comparação dos
+                    perfis.</p>
+                </div>
+              </div>
+              <div id="neighbors"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section id="calculos" role="tabpanel" aria-labelledby="tab-calculos" tabindex="0" hidden>
+        <div class="sectionline">
+          <h2>Matrizes e cálculos</h2><span>Desafio 6 · passo a passo</span>
+        </div>
+        <article class="card">
+          <div class="cardhead">
+            <div>
+
+              <h2>Matriz de similaridade</h2>
+              <p class="muted">Clique em uma célula fora da diagonal para examinar o par.</p>
+            </div><span class="badge" id="matrix-mode"></span>
+          </div>
+          <div id="heatmap"></div>
+          <div class="legend"><span>0 · sem proximidade neste modelo</span><span class="gradient"
+              aria-hidden="true"></span><span>1 · proximidade máxima</span></div>
+          <p class="detail-note">A diagonal compara o perfil consigo mesmo e não entra nas recomendações. No híbrido,
+            blocos vazios podem deixar a diagonal abaixo de 1.</p>
+        </article>
+        <article class="card full" id="pair-panel">
+          <div class="cardhead">
+            <div>
+
+              <h2>Cálculo entre dois perfis</h2>
+              <p class="muted">Os valores exibidos são arredondados; o ranking utiliza a precisão completa do JSON.</p>
+            </div>
+          </div>
+          <div class="pair-controls">
+            <div class="field"><label for="pair-a">Perfil A</label><select id="pair-a"></select></div>
+            <div class="field"><label for="pair-b">Perfil B</label><select id="pair-b"></select></div>
+            <div class="field"><label for="block">Bloco de características</label><select id="block"></select></div>
+          </div>
+          <div id="pair-math" aria-live="polite"></div>
+        </article>
+        <article class="card full">
+          <details>
+            <summary>Explorar a matriz estudante–item completa</summary>
+            <p class="detail-note">1 = declarado; 0 = não informado. A categoria faz parte da identidade do item.</p>
+            <div id="user-item"></div>
+          </details>
+        </article>
+      </section>
+      <div id="critica-panel" role="tabpanel" aria-labelledby="tab-critica" tabindex="0" hidden>
+        <section class="critical" id="materacia" aria-labelledby="critical-title">
+          <h2 id="critical-title">Materacia: leitura crítica do modelo</h2>
+          <p class="critical-intro">Interpretar números é também perguntar de onde eles vieram, que escolhas representam
+            e
+            quais consequências podem produzir. A partir da proposta de Ubiratan D’Ambrosio, este laboratório convida a
+            ler,
+            questionar e reformular modelos.</p>
+          <div class="loop" aria-label="Ciclo conceitual de feedback cultural"><strong>Cultura</strong><span
+              aria-hidden="true">→</span><strong>Dados</strong><span
+              aria-hidden="true">→</span><strong>Modelo</strong><span
+              aria-hidden="true">→</span><strong>Recomendação</strong><span aria-hidden="true">→</span><strong>Cultura
+              ↺</strong></div>
+          <div class="critical-grid">
+            <article>
+              <h3>Visibilidade e popularidade</h3>
+              <p>Um item popular pode receber apoio de mais colegas. Compare os modelos: quais práticas aparecem
+                repetidamente? Como seriam as sugestões se a turma tivesse outros repertórios?</p>
+            </article>
+            <article>
+              <h3>Acesso às plataformas</h3>
+              <p>Plataformas em comum aproximam perfis no híbrido. Assinaturas, conexão e renda podem influenciar esse
+                acesso. Uma coincidência de plataforma representa necessariamente gosto semelhante?</p>
+            </article>
+            <article>
+              <h3>Limites dos registros</h3>
+              <p>Os dados não abrangem toda a vida cultural. Ausências, regras de linguagem e categorias limitam o
+                modelo.
+                Que manifestações locais, coletivas ou pouco registradas poderiam ficar invisíveis?</p>
+            </article>
+          </div>
+          <p class="note">O ciclo acima é conceitual: este dashboard não simula novas rodadas de consumo. Use-o para
+            discutir como a repetição de sugestões pode reforçar bolhas de filtro e padronização cultural, e como
+            ampliar a
+            diversidade de fontes e decisões.</p>
+          <a class="small" href="https://doi.org/10.1207/s15327833mtl0102_3" target="_blank"
+            rel="noopener noreferrer">Referência: D’Ambrosio (1999)</a>
+        </section>
+        <section id="ficha">
+          <div class="sectionline">
+            <h2>Ficha do modelo</h2><span>Dados, regras e limites</span>
+          </div>
+          <article class="card">
+            <div class="model-grid">
+              <div>
+                <h3>O que entra e o que sai</h3>
+                <p>Uma aba por estudante; registros de produtos, categorias, meios, descoberta e motivos. O modelo
+                  ordena
+                  itens presentes na turma e ausentes do perfil selecionado. O score é apoio ponderado de colegas
+                  semelhantes; sua escala de 0 a 1 não representa probabilidade de gostar.</p>
+                <h3>As escolhas de representação</h3>
+                <p>Categorias e títulos identificam um item. Autores, parênteses e versões são preservados. Textos
+                  originais
+                  continuam disponíveis. Regras de palavras-chave produzem tags; elas não compreendem contexto, ironia
+                  ou
+                  negação.</p>
+                <p>Um formulário que pede categorias parecidas a todos pode produzir proximidade por causa da própria
+                  coleta. O híbrido inclui esse efeito com peso explícito.</p>
+                <p id="case-study" class="notice warm">Experimento: encontre um perfil sem itens compartilhados. Compare
+                  o
+                  resultado do cosseno com o híbrido e investigue quais características passam a aproximá-lo dos
+                  colegas.
+                </p>
+              </div>
+              <div>
+                <h3>Pesos fixos do modo híbrido</h3>
+                <div id="weights"></div>
+                <p class="detail-note">Cada bloco recebe normalização L2 por perfil. Contagens de itens são binárias;
+                  categorias contam itens distintos; cada tag conta uma vez por item. Cosseno de vetor vazio = 0. Os
+                  pesos
+                  não são redistribuídos.</p>
+                <h3>Limites da leitura</h3>
+                <p>Este é um modelo didático de uma pequena amostra, com dados declarados e sem notas de preferência.
+                  Correção matemática dos cálculos não demonstra acurácia preditiva nem neutralidade cultural.</p>
+                <h3>Atividade de reformulação</h3>
+                <p>Justifique uma mudança nos pesos ou nas regras, altere o Python e gere outro JSON. Quais
+                  recomendações
+                  mudam? Quem passa a aparecer? Que efeitos a alteração pode produzir?</p>
+              </div>
+            </div>
+            <details>
+              <summary>Consultar regras textuais, limpeza e referências</summary>
+              <div id="rules">
+                <p class="detail-note">Carregue o JSON para consultar as regras e decisões da execução.</p>
+              </div>
+            </details>
+            <p class="detail-note">Alinhamento aos Desafios 6–9 conforme o enunciado fornecido. O PDF da trilha não foi
+              disponibilizado.</p>
+          </article>
+        </section>
+        <section id="qualidade" hidden>
+          <div class="sectionline">
+            <h2>Tratamento dos dados</h2><span>Registro da leitura da planilha</span>
+          </div>
+          <article class="card">
+            <div id="quality-summary"></div>
+            <div class="quality-filters">
+              <div class="field"><label for="event-type">Tipo de evento</label><select id="event-type"></select></div>
+              <div class="field"><label for="event-student">Estudante / aba</label><select id="event-student"></select>
+              </div>
+            </div>
+            <div id="quality-events"></div>
+          </article>
+        </section>
+      </div>
+    </div>
+    <footer><span>Cultura, consumo, modelos matemáticos e Materacia</span><span>Fonte: registros da turma. Dados
+        processados localmente.</span></footer>
+  </main>
+  <dialog id="explanation-dialog" aria-labelledby="explanation-title" aria-describedby="explanation-body">
+    <div class="dialog-head">
+      <h2 id="explanation-title">Explicação do dado</h2><button type="button" id="close-explanation"
+        class="button">Fechar</button>
+    </div>
+    <div id="explanation-body"></div>
+  </dialog>
+  <script>
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const MODE_NAMES = { cosseno: 'Cosseno · itens declarados', hibrido: 'Híbrido · 5 blocos' };
+    const EXPECTED_WEIGHTS = { itens: .4, categorias: .1, plataformas: .2, descoberta: .15, motivos: .15 };
+    const BLOCK_NAMES = { itens: 'Itens declarados', categorias: 'Categorias', plataformas: 'Meios de consumo', descoberta: 'Descoberta', motivos: 'Motivos' };
+    const EVENT_NAMES = { categoria_preenchida: 'Categoria herdada', campo_ausente: 'Campo ausente', texto_sem_tag: 'Texto sem tag', normalizacao: 'Normalização', conflito_categoria: 'Conflito de categoria', duplicata: 'Duplicata', linha_descartada: 'Linha descartada', categoria_ausente: 'Categoria ausente' };
+    const state = { data: null, student: null, mode: 'cosseno', view: 'perfil', pairA: null, pairB: null, block: 'itens' };
+    const number = (v, digits = 4) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(v);
+    const percent = v => number(v * 100, 1) + '%';
+    function node(tag, attrs = {}, ...children) {
+      const element = document.createElement(tag);
+
+      for (const [key, value] of Object.entries(attrs)) {
+        element.setAttribute(key, String(value));
+      }
+
+      for (const child of children.flat(Infinity)) {
+        if (child !== null && child !== undefined) {
+          element.append(
+            child instanceof Node
+              ? child
+              : document.createTextNode(String(child))
+          );
+        }
+      }
+
+      return element;
+    }
+
+    function set(id, ...children) {
+      $(id).replaceChildren(
+        ...children.flat(Infinity).filter(
+          child => child !== null && child !== undefined
+        )
+      );
+    }
+
+    function textP(text, cls = 'detail-note') {
+      return node('p', { class: cls }, text);
+    }
+
+    function option(value, label) {
+      return node('option', { value }, label);
+    }
+
+    const HELP = {
+      estudantes: ['Estudantes na base', 'É a quantidade de abas de estudantes lidas na planilha. Cada aba representa um perfil; o número não mede a diversidade de pessoas ou de experiências culturais.'],
+      registros: ['Registros de consumo', 'Cada registro é uma linha com um produto válido. A mesma pessoa pode ter várias linhas. Linhas repetidas são preservadas no relatório, mas não aumentam o consumo na matriz binária.'],
+      itens_distintos: ['Itens distintos', 'Um item é identificado pela combinação de categoria e título normalizados. Caixa, acentos e pontuação superficial são normalizados; autores, parênteses e versões são preservados. O mesmo título em categorias diferentes conta como itens separados.'],
+      perfil: ['Perfil do estudante', 'O nome vem da aba da planilha. A contagem de itens considera produtos distintos declarados por esse estudante; a contagem de registros considera as linhas válidas. Nenhuma dessas contagens mede frequência ou intensidade.'],
+      categorias: ['Distribuição por categoria', 'O número ao lado da barra é a quantidade de itens distintos declarados na categoria. O comprimento da barra é essa quantidade dividida pelo total de itens do perfil. A coleta pode ter solicitado categorias parecidas a todos.', 'proporção da categoria = itens da categoria / itens do estudante'],
+      faltantes: ['Campos ausentes', 'Estas contagens indicam quantos registros não informam meio de consumo, descoberta ou motivo. Campos ausentes não recebem tags. Zero campos ausentes não garante que todos os textos foram reconhecidos pelas regras.'],
+      vizinhos: ['Vizinhos e apoio disponível', 'São os outros estudantes ordenados pela similaridade com o perfil selecionado. Todos os colegas com similaridade positiva entram no denominador. O próprio estudante é excluído. Uma similaridade zero significa ausência de sinal de proximidade neste modelo.'],
+      score: ['Apoio ponderado da recomendação', 'É a fração do apoio dos colegas semelhantes que vem de quem declarou este item. Um valor de 50% significa metade dessa soma de similaridades. Não significa 50% de chance de gostar, nem 50% da turma.', 'score = Σ(similaridade × consumo binário do item) / Σ(similaridades positivas)'],
+      apoiadores: ['Apoiadores e vizinhos positivos', 'Apoiadores são os colegas com similaridade positiva que declararam o item. Vizinhos positivos são todos os colegas semelhantes, incluindo os que não declararam esse candidato. Poucos apoiadores podem produzir score alto quando há poucos vizinhos.'],
+      posicao: ['Posição no ranking', 'As recomendações são ordenadas por score decrescente. Em caso de empate, o identificador do item decide a ordem. Esse desempate é estável, mas não tem significado cultural. A comparação considera o ranking completo de cada modelo.'],
+      movimento: ['Comparação entre modelos', 'A indicação compara a posição deste mesmo item no cosseno e no híbrido. Sem apoio no outro modo significa que o item não recebeu score positivo naquele modelo. Empates resolvidos por ID também podem influenciar posições.'],
+      similaridade: ['Similaridade entre perfis', 'No cosseno, mede o alinhamento dos vetores binários de itens. No híbrido, é a soma dos cossenos dos cinco blocos com pesos fixos. Com estes dados não negativos, valores próximos de 1 indicam maior proximidade. Não é uma porcentagem de identidade entre pessoas.', 'cos(A,B) = Σ(Aₖ × Bₖ) / (√ΣAₖ² × √ΣBₖ²)'],
+      matriz_similaridade: ['Matriz de similaridade', 'Cada célula cruza o perfil da linha com o perfil da coluna. O número é a similaridade no modo selecionado; a cor apenas representa sua intensidade. Clique fora da diagonal para examinar o par. A diagonal é a comparação consigo mesmo e não sustenta recomendações.'],
+      matriz_consumo: ['Matriz estudante–item', 'Cada linha é um estudante e cada coluna é um item identificado por categoria e título. O valor 1 indica consumo declarado; 0 significa que não há registro. Ausência não significa rejeição nem prova de que a pessoa desconhece o item.'],
+      item_coluna: ['Item na matriz de consumo', 'Esta coluna representa um produto cultural específico e sua categoria. O valor 1 indica declaração de consumo pelo estudante da linha. O valor 0 indica apenas ausência de registro.'],
+      estudante: ['Identificação do estudante', 'O nome vem da aba correspondente na planilha. Nas tabelas, identifica o perfil da linha ou o colega que sustenta um cálculo. Os nomes foram mantidos conforme a configuração deste projeto.'],
+      item: ['Produto cultural declarado', 'É o título informado na planilha, com espaços regularizados. Títulos diferentes, autores, parênteses e versões são preservados. O mesmo título pode pertencer a itens diferentes quando a categoria declarada muda.'],
+      categoria: ['Categoria do produto', 'É a categoria declarada no formulário. Quando a célula está vazia dentro de um bloco, o leitor herda a categoria anterior da mesma aba. Conflitos são registrados; o modelo não decide automaticamente qual categoria seria correta.'],
+      meio: ['Meio de consumo', 'Texto informado sobre onde ou como o item é consumido. As regras de palavras-chave podem converter esse texto em tags de plataformas ou meios. Compartilhar uma plataforma pode refletir condições de acesso, além de preferências.'],
+      descoberta: ['Forma de descoberta', 'Texto informado sobre como o produto entrou na rotina. As palavras-chave geram tags como amigos, família ou algoritmo. Um texto pode gerar várias tags ou nenhuma. O modelo não interpreta contexto ou negação.'],
+      motivo: ['Motivo declarado', 'Texto informado pelo estudante sobre por que consome o produto. Regras explícitas convertem partes do texto em tags. Essas categorias são decisões de representação; não resumem toda a experiência cultural.'],
+      caracteristica: ['Característica do vetor', 'Cada linha corresponde a uma dimensão do bloco selecionado: um item, uma categoria ou uma tag textual. Todos os estudantes usam o mesmo vocabulário nesse bloco; assim os vetores podem ser comparados posição a posição.'],
+      vetor_a: ['Componente do perfil A', 'É o valor bruto desta característica no vetor do perfil A. No bloco de itens, é 0 ou 1. Em categorias e tags, é uma contagem por item distinto. Os valores brutos permitem acompanhar a normalização pelo cosseno.'],
+      vetor_b: ['Componente do perfil B', 'É o valor bruto desta característica no vetor do perfil B. No bloco de itens, é 0 ou 1. Em categorias e tags, é uma contagem por item distinto. Compare a mesma linha nos dois perfis.'],
+      produto_componentes: ['Produto dos componentes', 'Multiplicamos o valor de A pelo de B na mesma característica. Uma parcela só contribui se ambos forem diferentes de zero. A soma desta coluna é o produto escalar dos vetores.', 'A · B = Σ(Aₖ × Bₖ)'],
+      quadrado_a: ['Quadrado do componente de A', 'É o componente de A multiplicado por ele mesmo. Somamos estes quadrados e extraímos a raiz para calcular a norma do vetor A.', '‖A‖ = √ΣAₖ²'],
+      quadrado_b: ['Quadrado do componente de B', 'É o componente de B multiplicado por ele mesmo. Somamos estes quadrados e extraímos a raiz para calcular a norma do vetor B.', '‖B‖ = √ΣBₖ²'],
+      produto_escalar: ['Produto escalar', 'É a soma dos produtos entre características correspondentes dos dois perfis. Antes da divisão pelas normas, vetores com mais registros podem produzir somas maiores.', 'A · B = Σ(Aₖ × Bₖ)'],
+      normas: ['Normas dos vetores', 'A norma L2 mede o comprimento do vetor: é a raiz da soma dos quadrados dos seus componentes. O cosseno divide o produto escalar pelo produto das normas. Se uma norma for zero, adotamos cosseno zero.', '‖A‖ = √ΣAₖ²; ‖B‖ = √ΣBₖ²'],
+      bloco: ['Bloco de características', 'O modelo organiza dados em itens, categorias, meios de consumo, descoberta e motivos. Inspecionar outro bloco muda o cálculo mostrado, mas não altera os pesos ou o ranking. O cosseno puro usa apenas itens.'],
+      peso: ['Peso no híbrido', 'É a importância fixa deste bloco na soma híbrida: itens 40%, categorias 10%, meios 20%, descoberta 15% e motivos 15%. A soma é 100%. Blocos vazios contribuem com zero e seus pesos não são redistribuídos.', 'similaridade híbrida = Σ(peso do bloco × cosseno do bloco)'],
+      contribuicao: ['Contribuição para a soma', 'Na recomendação, é a similaridade do apoiador dividida pelo denominador; as parcelas somam o score. Na tabela dos blocos, é peso × cosseno; essas parcelas somam a similaridade híbrida. São somas diferentes, indicadas pelo contexto da tabela.'],
+      consumo: ['Indicador de consumo', 'Vale 1 quando o colega declarou este item. Na tabela de apoiadores aparecem somente pessoas com consumo 1 e similaridade positiva. Na matriz completa, 0 indica ausência de registro.'],
+      produto_apoio: ['Produto similaridade × consumo', 'Esta é a parcela que o colega acrescenta ao numerador. Como os apoiadores têm consumo binário 1, a parcela é igual à similaridade do colega.', 'parcela do numerador = s(u,v) × M[v,item]'],
+      denominador: ['Soma das similaridades positivas', 'É a soma das similaridades com todos os outros colegas que têm valor maior que zero no modo selecionado. Inclui os que não declararam este candidato e exclui o próprio estudante. O mesmo denominador é usado para todos os candidatos deste perfil e modo.', 'denominador = Σ s(u,v), para v ≠ u e s(u,v) > 0'],
+      qualidade: ['Registro de qualidade', 'As contagens indicam eventos de tratamento, não pessoas. Um mesmo registro pode gerar vários eventos: normalização, categoria herdada, campo ausente ou texto sem tag. Os filtros permitem consultar a origem e a decisão tomada.'],
+      evento: ['Tipo de evento', 'Classifica o que o leitor encontrou ou transformou. Normalização é a criação de uma chave de comparação. Categoria herdada indica preenchimento por bloco. Texto sem tag é diferente de campo ausente. Conflito preserva as categorias distintas.'],
+      aba: ['Origem na planilha', 'É a aba de onde veio o registro. Eventos de conflito podem envolver várias abas; suas ocorrências aparecem na descrição. A aba identifica o estudante nesta coleta.'],
+      linha: ['Linha da planilha', 'É o número da linha no Excel, contando a primeira linha de cabeçalhos. Permite localizar o registro original. Eventos agregados ou conflitos entre abas podem apresentar a linha dentro da descrição.'],
+      decisao: ['Decisão de tratamento', 'Descreve a ação aplicada ou a limitação observada. Quando aparece uma chave, ela serve apenas à comparação; o título original continua no perfil. Verifique a origem antes de interpretar uma inconsistência como erro de um estudante.'],
+      tag: ['Tag textual', 'É uma categoria atribuída por uma regra de palavras-chave. Cada tag conta no máximo uma vez por item do estudante; um texto pode receber várias tags. As tags representam escolhas humanas de classificação.'],
+      regex: ['Expressão regular', 'É o padrão de texto usado para reconhecer uma tag. A comparação ignora caixa e acentos. O símbolo | indica alternativas. Encontrar uma palavra não garante compreender o sentido, a negação ou a intenção do relato.'],
+      feedback: ['Ciclo de feedback cultural', 'O diagrama representa uma hipótese de influência: práticas culturais viram dados, que alimentam um modelo; suas sugestões podem influenciar práticas futuras. Esta página ilustra o ciclo, mas não simula novas rodadas nem demonstra efeitos causais.'],
+      geral: ['Leitura do dado', 'Este dado vem da planilha ou dos cálculos exportados pelo Python. Leia-o com o título da coluna e o perfil selecionado. As regras e limitações estão na ficha do modelo.']
+    };
+    const VIEW_GUIDES = {
+      perfil: '',
+      calculos: 'Compare dois estudantes. Escolha uma célula da matriz ou use os seletores para acompanhar o cálculo.',
+      'critica-panel': 'Leia os limites do modelo e consulte as decisões tomadas no tratamento dos dados.'
+    };
+    function showView(view, focusTab = false) {
+      if (!Object.hasOwn(VIEW_GUIDES, view)) {
+        return;
+      }
+
+      state.view = view;
+
+      for (const id of Object.keys(VIEW_GUIDES)) {
+        $(id).hidden = id !== view;
+      }
+
+      for (const tab of document.querySelectorAll('[data-view]')) {
+        const selected = tab.dataset.view === view;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+
+        if (selected && focusTab) {
+          tab.focus();
+        }
+      }
+
+      $('view-guide').textContent = VIEW_GUIDES[view];
+      $('view-guide').hidden = !VIEW_GUIDES[view];
+    }
+    const tabs = [...document.querySelectorAll('[data-view]')];
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => showView(tab.dataset.view));
+      tab.addEventListener('keydown', event => {
+        let next;
+        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+        else if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        showView(tabs[next].dataset.view, true);
+      });
+    });
+    $('more-recs').addEventListener('click', () => {
+      const select = $('top-n'), values = [...select.options].map(option => option.value);
+      const previousCount = $('recommendations').querySelectorAll('article.rec').length;
+      select.value = values[Math.min(values.indexOf(select.value) + 1, values.length - 1)];
+      renderRecommendations();
+      const firstNew = $('recommendations').querySelectorAll('article.rec')[previousCount]?.querySelector('h3');
+      if (firstNew) { firstNew.tabIndex = -1; firstNew.focus(); }
+    });
+
+    const HEADER_HELP = { 'Estudante': 'estudante', 'Perfil': 'estudante', 'Colega': 'estudante', 'Produto': 'item', 'Categoria usada': 'categoria', 'Meio': 'meio', 'Descoberta': 'descoberta', 'Motivo': 'motivo', 'Similaridade': 'similaridade', 'Consumo': 'consumo', 'Produto s × M': 'produto_apoio', 'Parcela do score': 'contribuicao', 'Característica': 'caracteristica', 'A': 'vetor_a', 'B': 'vetor_b', 'A × B': 'produto_componentes', 'A²': 'quadrado_a', 'B²': 'quadrado_b', 'Bloco': 'bloco', 'Peso': 'peso', 'Cosseno': 'similaridade', 'Contribuição': 'contribuicao', 'Evento': 'evento', 'Aba': 'aba', 'Linha Excel': 'linha', 'Decisão / observação': 'decisao', 'Tag': 'tag', 'Expressão regular': 'regex' };
+    let helpOrigin = null;
+    function helpButton(key, context = '') {
+      const topic = HELP[key] || HELP.geral;
+      return node('button', { type: 'button', class: 'help-button', 'data-explain': key, 'data-context': context, 'aria-haspopup': 'dialog', 'aria-controls': 'explanation-dialog', 'aria-label': 'Explicação: ' + topic[0] }, 'Explicação');
+    }
+    function explain(key, context, origin) {
+      const topic = HELP[key] || HELP.geral;
+      $('explanation-title').textContent = topic[0];
+      set('explanation-body', node('p', {}, topic[1]), topic[2] ? node('pre', {}, topic[2]) : null, context ? node('p', { class: 'notice' }, context) : null);
+      helpOrigin = origin;
+      const dialog = $('explanation-dialog');
+      if (!dialog.open) dialog.showModal();
+      $('close-explanation').focus();
+    }
+    document.addEventListener('click', event => {
+      const button = event.target.closest('button[data-explain]');
+      if (button) explain(button.dataset.explain, button.dataset.context, button);
+    });
+    $('close-explanation').addEventListener('click', () => $('explanation-dialog').close());
+    $('explanation-dialog').addEventListener('close', () => { if (helpOrigin?.isConnected) helpOrigin.focus({ preventScroll: true }); });
+    for (const [id, key] of Object.entries({ 'neighbors': 'vizinhos', 'heatmap': 'matriz_similaridade', 'user-item': 'matriz_consumo', 'pair-math': 'bloco', 'weights': 'peso', 'quality-summary': 'qualidade' })) {
+      const target = $(id), button = helpButton(key);
+      button.classList.add('section-help');
+      target.before(button);
+    }
+    $('materacia').querySelector('.loop').before(helpButton('feedback'));
+
+    function table(headers, rows, label, cls = '') {
+      const head = headers.map((title, i) => {
+        const key = HEADER_HELP[title] || (cls === 'heatmap' ? 'matriz_similaridade' : label === 'Matriz estudante–item completa' && i > 0 ? 'item_coluna' : 'geral');
+        return node('th', { scope: 'col' }, title ? helpButton(key, 'Coluna: ' + title + '.') : null, node('span', { class: 'column-title' }, title));
+      });
+      return node('div', { class: 'table-scroll', tabindex: 0, role: 'region', 'aria-label': label }, node('table', { class: cls }, node('thead', {}, node('tr', {}, head)), node('tbody', {}, rows.map(row => node('tr', {}, row.map((cell, i) => node(i === 0 ? 'th' : 'td', i === 0 ? { scope: 'row' } : {}, cell)))))));
+    }
+    function message(text, error = false) {
+      $('status').textContent = text;
+      $('status').dataset.error = String(error);
+    }
+
+    function requireThat(condition, text) {
+      if (!condition) {
+        throw new Error(text);
+      }
+    }
+
+    function isNumber(value) {
+      return typeof value === 'number' && Number.isFinite(value);
+    }
+
+    function matrix(values, rows, cols, binary = false) {
+      return (
+        Array.isArray(values) &&
+        values.length === rows &&
+        values.every(
+          row =>
+            Array.isArray(row) &&
+            row.length === cols &&
+            row.every(
+              value =>
+                isNumber(value) &&
+                value >= 0 &&
+                (!binary || value === 0 || value === 1)
+            )
+        )
+      );
+    }
+    function validate(data) {
+      requireThat(data && data.schema_version === '1.0', 'Versão incompatível. Gere o arquivo com este recomendador.py.');
+      const students = data.estudantes, items = data.itens;
+      requireThat(Array.isArray(students) && students.length > 0 && students.length <= 200 && Array.isArray(items) && items.length > 0 && items.length <= 20000, 'Lista de estudantes ou itens inválida ou acima do limite deste dashboard (200 estudantes / 20.000 itens).');
+      const uids = new Set(), iids = new Set();
+      for (const s of students) { requireThat(s && /^u_[a-f0-9]{16}$/.test(s.id) && typeof s.nome === 'string' && s.nome.length > 0 && !uids.has(s.id), 'Identificação de estudante inválida ou repetida.'); uids.add(s.id); }
+      for (const item of items) { requireThat(item && /^i_[a-f0-9]{16}$/.test(item.id) && !iids.has(item.id) && typeof item.nome === 'string' && typeof item.categoria === 'string' && typeof item.categoria_chave === 'string' && Array.isArray(item.consumidores) && item.consumidores.every(id => uids.has(id)), 'Item cultural inválido.'); iids.add(item.id); }
+      for (const s of students) { requireThat(Array.isArray(s.itens) && s.itens.every(id => iids.has(id)) && Array.isArray(s.registros) && s.registros.every(r => r && iids.has(r.item_id) && ['produto', 'categoria', 'categoria_original', 'meio', 'descoberta', 'motivo'].every(k => r[k] === null || typeof r[k] === 'string')) && s.faltantes && ['meio', 'descoberta', 'motivo'].every(k => Number.isInteger(s.faltantes[k]) && s.faltantes[k] >= 0), 'Perfil ou campos ausentes inválidos.'); }
+      const n = students.length;
+      requireThat(matrix(data.matriz_usuario_item, n, items.length, true), 'Matriz estudante–item inválida.');
+      requireThat(data.metadados && data.metadados.estudantes === n && data.metadados.itens === items.length && Number.isInteger(data.metadados.registros) && typeof data.metadados.arquivo === 'string' && typeof data.metadados.gerado_em === 'string' && Array.isArray(data.metadados.limpeza) && data.metadados.limpeza.every(s => typeof s === 'string') && data.metadados.regras, 'Metadados incompletos.');
+      for (const [b, w] of Object.entries(EXPECTED_WEIGHTS)) {
+        const d = data.blocos?.[b];
+        requireThat(data.metadados.pesos?.[b] === w && d && Array.isArray(d.vocabulario) && Array.isArray(d.rotulos) && d.rotulos.length === d.vocabulario.length && d.rotulos.every(x => typeof x === 'string') && matrix(d.vetores, n, d.vocabulario.length) && Array.isArray(d.normas) && d.normas.length === n && d.normas.every(v => isNumber(v) && v >= 0) && matrix(d.produtos_escalares, n, n) && matrix(d.similaridades, n, n), 'Bloco matemático ou peso inválido: ' + b);
+        if (b !== 'itens' && b !== 'categorias') requireThat(data.metadados.regras[b] && Object.values(data.metadados.regras[b]).every(v => typeof v === 'string'), 'Regras textuais incompletas.');
+      }
+      requireThat(data.blocos.itens.vocabulario.every((id, j) => id === items[j].id), 'Ordem das colunas de itens incompatível.');
+      for (const mode of ['cosseno', 'hibrido']) {
+        const model = data.modelos?.[mode]; requireThat(model && matrix(model.similaridades, n, n), 'Matriz de similaridade inválida: ' + mode);
+        for (const s of students) {
+          const u = model.usuarios?.[s.id]; requireThat(u && Array.isArray(u.vizinhos) && Array.isArray(u.recomendacoes) && isNumber(u.denominador) && u.denominador >= 0 && (u.motivo_sem_recomendacao === null || typeof u.motivo_sem_recomendacao === 'string'), 'Resultado de estudante incompleto.');
+          requireThat(u.vizinhos.every(v => v && uids.has(v.id) && v.id !== s.id && typeof v.nome === 'string' && isNumber(v.similaridade) && v.similaridade >= 0 && v.similaridade <= 1.00000001), 'Vizinho inválido.');
+          for (const r of u.recomendacoes) requireThat(r && iids.has(r.item_id) && !s.itens.includes(r.item_id) && typeof r.item === 'string' && typeof r.categoria === 'string' && isNumber(r.score) && r.score > 0 && r.score <= 1.00000001 && isNumber(r.numerador) && r.numerador > 0 && isNumber(r.denominador) && r.denominador > 0 && Number.isInteger(r.numero_apoiadores) && Number.isInteger(r.numero_vizinhos_positivos) && Array.isArray(r.usuarios_semelhantes) && r.usuarios_semelhantes.every(v => v && uids.has(v.id) && v.id !== s.id && typeof v.nome === 'string' && isNumber(v.similaridade) && v.similaridade > 0 && isNumber(v.contribuicao) && v.contribuicao > 0), 'Recomendação inválida.');
+        }
+      }
+      requireThat(data.qualidade && data.qualidade.resumo && Object.values(data.qualidade.resumo).every(v => Number.isInteger(v) && v >= 0) && Array.isArray(data.qualidade.eventos) && data.qualidade.eventos.every(e => e && typeof e.tipo === 'string' && typeof e.mensagem === 'string' && (!e.ocorrencias || Array.isArray(e.ocorrencias))), 'Relatório de qualidade inválido.');
+      return data;
+    }
+    function populate() {
+      const d = state.data; state.student = d.estudantes[0].id; state.pairA = state.student; state.pairB = d.estudantes[1]?.id ?? state.student; state.mode = 'cosseno'; state.block = 'itens';
+      for (const id of ['student', 'pair-a', 'pair-b']) set(id, d.estudantes.map(s => option(s.id, s.nome)));
+      set('block', Object.entries(BLOCK_NAMES).map(([b, name]) => option(b, name)));
+      $('student').value = state.student; $('pair-a').value = state.pairA; $('pair-b').value = state.pairB; $('top-n').value = '5';
+      const noOverlap = d.estudantes.filter(s => d.modelos.cosseno.usuarios[s.id].vizinhos.every(v => v.similaridade === 0));
+      $('case-study').textContent = noOverlap.length ? 'Caso para investigar: ' + noOverlap.map(s => s.nome).join(', ') + ' não tem itens compartilhados com colegas no modo puro. Selecione esse perfil e compare o híbrido: quais blocos criam proximidade?' : 'Experimento: compare um mesmo par de estudantes nos dois modos. Que características ampliam a proximidade? Como as regras da coleta afetam essa leitura?';
+      set('weights', Object.entries(EXPECTED_WEIGHTS).map(([b, w]) => node('div', { class: 'weight' }, node('span', {}, BLOCK_NAMES[b]), node('div', { class: 'weight-value' }, helpButton('peso', BLOCK_NAMES[b] + ': ' + percent(w) + '.'), node('strong', { class: 'numeric' }, percent(w))))));
+      const rules = d.metadados.limpeza.map(s => node('li', {}, s));
+      const ruleDetails = Object.keys(d.metadados.regras).map(b => node('details', {}, node('summary', {}, BLOCK_NAMES[b] ?? b), textP('Cada expressão pode atribuir uma tag por item. O texto é comparado sem distinção de caixa ou acentos. Ausências não geram tags.'), table(['Tag', 'Expressão regular'], Object.entries(d.metadados.regras[b]).map(([tag, rx]) => [tag, node('code', {}, rx)]), 'Regras de ' + (BLOCK_NAMES[b] ?? b))));
+      set('rules', node('ul', { class: 'small' }, rules), ruleDetails, node('div', { class: 'sources' }, node('a', { href: 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.cosine_similarity.html', target: '_blank', rel: 'noopener noreferrer' }, 'Documentação do cosseno ↗'), node('a', { href: 'https://doi.org/10.1207/s15327833mtl0102_3', target: '_blank', rel: 'noopener noreferrer' }, 'D’Ambrosio (1999) ↗')));
+      const q = d.qualidade.resumo; set('quality-summary', node('p', { class: 'small muted' }, 'Registro das escolhas e dos limites encontrados na leitura da planilha.'), node('div', {}, Object.entries(q).map(([k, v]) => node('span', { class: 'quality-count' }, helpButton(k === 'conflito_categoria' ? 'categoria' : 'evento', (EVENT_NAMES[k] ?? k) + ': ' + v + ' evento(s).'), (EVENT_NAMES[k] ?? k) + ': ' + v))));
+      set('event-type', option('all', 'Todos os eventos'), Object.keys(q).map(k => option(k, EVENT_NAMES[k] ?? k))); set('event-student', option('all', 'Todas as abas'), d.estudantes.map(s => option(s.id, s.nome)));
+      set('stats', [[d.estudantes.length, 'estudantes', 'estudantes'], [d.metadados.registros, 'registros', 'registros'], [d.itens.length, 'itens distintos', 'itens_distintos']].map(([value, label, key]) => node('div', { class: 'stat' }, helpButton(key), node('div', { class: 'stat-value' }, node('strong', {}, value), node('span', {}, label)))));
+      set('user-item', table(['Estudante', ...d.itens.map(i => i.nome + ' · ' + i.categoria)], d.estudantes.map((s, i) => [s.nome, ...d.matriz_usuario_item[i]]), 'Matriz estudante–item completa'));
+      $('initial').hidden = true; $('workspace').hidden = false; $('qualidade').hidden = false;
+      document.body.classList.add('has-data');
+      $('file-button-label').textContent = 'Abrir arquivo JSON';
+      showView('perfil');
+      render(); renderQuality();
+    }
+    function render() {
+      if (!state.data) return;
+      for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode));
+      $('matrix-mode').textContent = MODE_NAMES[state.mode];
+      $('model-note').textContent = state.mode === 'cosseno' ? 'A proximidade considera apenas os itens registrados em comum.' : 'Combina itens, categorias, meios de consumo, descoberta e motivos.';
+      renderProfile(); renderRecommendations(); renderNeighbors(); renderHeatmap(); renderPair();
+    }
+    function renderProfile() {
+      const d = state.data, s = d.estudantes.find(s => s.id === state.student), counts = new Map();
+      for (const iid of s.itens) { const item = d.itens.find(i => i.id === iid); const key = item.categoria_chave || 'Não informada'; const value = counts.get(key) || { nome: item.categoria, n: 0 }; value.n++; counts.set(key, value); }
+      const rows = [...counts.values()].sort((a, b) => b.n - a.n || a.nome.localeCompare(b.nome));
+      const bars = rows.map(c => node('div', { class: 'bar-row' }, node('span', {}, c.nome), node('div', { class: 'bar-track' }, node('div', { class: 'bar', style: 'width:' + c.n / Math.max(1, s.itens.length) * 100 + '%' })), node('strong', { class: 'numeric' }, c.n)));
+      const missing = Object.entries(s.faltantes).map(([k, v]) => k + ': ' + v).join(' · ');
+      const recs = s.registros.map(r => [r.produto, r.categoria || 'Não informada', r.meio ?? 'Não informado', r.descoberta ?? 'Não informado', r.motivo ?? 'Não informado']);
+      set('profile', helpButton('perfil'), node('div', { class: 'profile-name' }, s.nome), textP(s.itens.length + ' itens distintos · ' + s.registros.length + ' registros de consumo', 'small muted'), helpButton('categorias'), bars, node('p', { class: 'notice' }, '1 = consumo declarado. 0 = não informado. Os dados não medem intensidade nem rejeição.'), helpButton('faltantes'), textP('Campos ausentes nos registros: ' + missing + '.'), node('details', {}, node('summary', {}, 'Ver declarações originais e campos descritivos'), table(['Produto', 'Categoria usada', 'Meio', 'Descoberta', 'Motivo'], recs, 'Registros de consumo de ' + s.nome), textP('A categoria usada pode ter sido herdada do bloco anterior; confira o caderno de qualidade. Produtos e descrições mantêm seu conteúdo original, com espaços regularizados.')));
+    }
+    function renderNeighbors() {
+      const u = state.data.modelos[state.mode].usuarios[state.student], positive = u.vizinhos.filter(v => v.similaridade > 0).length;
+      const rows = u.vizinhos.map(v => {
+        const button = node('button', { type: 'button', class: 'text-button', 'aria-label': 'Examinar cálculo com ' + v.nome }, 'Ver cálculo');
+        button.addEventListener('click', () => selectPair(state.student, v.id, true));
+        return [node('span', { class: 'neighbor-name' }, v.nome, node('small', {}, v.similaridade > 0 ? 'Incluído no denominador' : 'Sem apoio neste modo')), node('span', { class: 'numeric' }, number(v.similaridade)), button];
+      });
+      set('neighbors', rows.length ? table(['Estudante', 'Similaridade', ''], rows, 'Vizinhos do estudante selecionado') : textP('A base contém somente este estudante.'), helpButton('denominador'), node('p', { class: 'notice' }, positive + ' colegas com similaridade positiva. Soma das similaridades = ' + number(u.denominador, 6) + '.'));
+    }
+    function movement(rec, other) { const index = other.findIndex(r => r.item_id === rec.item_id); if (index < 0) return 'Sem apoio no outro modo'; const active = state.data.modelos[state.mode].usuarios[state.student].recomendacoes.findIndex(r => r.item_id === rec.item_id); const delta = index - active; return delta === 0 ? 'Mesma posição no outro modo' : (delta > 0 ? '↑ Sobe ' + delta : '↓ Desce ' + (-delta)) + ' posições vs. ' + (state.mode === 'cosseno' ? 'híbrido' : 'cosseno'); }
+    function renderRecommendations() {
+      const student = state.data.estudantes.find(s => s.id === state.student);
+      const u = state.data.modelos[state.mode].usuarios[state.student];
+      const otherMode = state.mode === 'cosseno' ? 'hibrido' : 'cosseno';
+      const other = state.data.modelos[otherMode].usuarios[state.student].recomendacoes;
+      const limit = $('top-n').value === 'all' ? u.recomendacoes.length : Number($('top-n').value);
+      const list = u.recomendacoes.slice(0, limit);
+      $('recommendations-title').textContent = 'Sugestões para ' + student.nome;
+      $('rec-subtitle').textContent = 'Itens não registrados neste perfil, ordenados pelo apoio de colegas semelhantes.';
+      $('rec-count').textContent = 'Mostrando ' + list.length + ' de ' + u.recomendacoes.length;
+      $('more-recs').hidden = list.length >= u.recomendacoes.length;
+      if (!list.length) {
+        const fallback = state.mode === 'cosseno' && other.length ? node('button', { type: 'button', class: 'button primary', id: 'try-hybrid' }, 'Comparar mais características') : null;
+        if (fallback) fallback.addEventListener('click', () => { state.mode = 'hibrido'; render(); });
+        set('recommendations', node('div', { class: 'empty' }, node('strong', {}, 'Sem recomendação sustentada pelos dados.'), node('br'), u.motivo_sem_recomendacao,
+          textP(fallback ? 'Este estudante pode se aproximar dos colegas por categorias, meios, descoberta e motivos. Experimente o modelo híbrido.' : 'Os dados disponíveis não sustentam novas sugestões neste modo.'), fallback));
+        return;
+      }
+      set('recommendations', list.map((rec, index) => {
+        const supporters = rec.usuarios_semelhantes.map(v => [v.nome, number(v.similaridade, 6), '1', number(v.similaridade, 6), percent(v.contribuicao)]);
+        const formula = '(' + rec.usuarios_semelhantes.map(v => number(v.similaridade, 6) + ' × 1').join(' + ') + ') / ' + number(rec.denominador, 6) + ' = ' + number(rec.score, 6);
+        const denominator = u.vizinhos.filter(v => v.similaridade > 0).map(v => v.nome + ': ' + number(v.similaridade, 6)).join(' + ');
+        const names = rec.usuarios_semelhantes.slice(0, 2).map(v => v.nome).join(' e ');
+        const remaining = rec.numero_apoiadores - 2;
+        const origin = 'Apoio de ' + names + (remaining > 0 ? ' e mais ' + remaining + (remaining === 1 ? ' colega' : ' colegas') : '') + '.';
+        return node('article', { class: 'rec' },
+          node('div', { class: 'rec-top' }, node('span', { class: 'rank' }, String(index + 1).padStart(2, '0')),
+            node('div', { class: 'rec-name' }, helpButton('item', 'Categoria declarada: ' + rec.categoria + '.'), node('h3', {}, rec.item), node('span', { class: 'badge' }, rec.categoria)),
+            node('div', { class: 'score' }, helpButton('score', 'Numerador: ' + number(rec.numerador, 6) + '; denominador: ' + number(rec.denominador, 6) + '.'), percent(rec.score), node('small', {}, 'apoio dos colegas'))),
+          node('p', { class: 'rec-origin' }, origin),
+          node('details', { class: 'recommendation-detail' }, node('summary', {}, 'Ver por que foi sugerido'),
+            helpButton('apoiadores'), textP(rec.numero_apoiadores + (rec.numero_apoiadores === 1 ? ' colega semelhante registrou' : ' colegas semelhantes registraram') + ' este item, entre ' + rec.numero_vizinhos_positivos + ' colegas com similaridade positiva.'),
+            table(['Colega', 'Similaridade', 'Consumo', 'Produto s × M', 'Parcela do score'], supporters, 'Apoio a ' + rec.item),
+            node('div', { class: 'mathbox' }, helpButton('score'), node('span', { class: 'eyebrow' }, 'Pontuação do candidato'), node('p', { class: 'formula' }, formula), textP('Numerador = ' + number(rec.numerador, 6) + ' · Denominador = ' + number(rec.denominador, 6) + '.')),
+            node('details', {}, node('summary', {}, 'Ver todos os colegas incluídos no denominador'), helpButton('denominador'), textP(denominator), textP('A soma inclui todos os colegas com similaridade positiva, mesmo os que não registraram este candidato. O próprio estudante é excluído.')),
+            textP('As parcelas de apoio somam o score. O valor não é uma probabilidade de gostar.')),
+          node('details', { class: 'comparison-detail' }, node('summary', {}, 'Comparar posição no outro modelo'), helpButton('movimento'), textP(movement(rec, other))));
+      }));
+    }
+    function shortName(student) {
+      return student.nome.split(/\s+/).slice(0, 2).join(' ');
+    }
+    function renderHeatmap() {
+      const d = state.data, sims = d.modelos[state.mode].similaridades;
+      const rows = d.estudantes.map((s, i) => [shortName(s), ...d.estudantes.map((t, j) => {
+        const val = sims[i][j], a = .07 + .93 * Math.min(1, val), btn = node('button', { type: 'button', style: 'background:rgba(42,83,105,' + a + ');color:' + (val > .75 ? '#fff' : '#192e32'), 'aria-label': s.nome + ' e ' + t.nome + ': similaridade ' + number(val, 6) + (i === j ? ' (diagonal)' : ''), title: s.nome + ' × ' + t.nome, 'aria-current': String(s.id === state.pairA && t.id === state.pairB) }, number(val, 2));
+        if (i === j) btn.disabled = true; else btn.addEventListener('click', () => selectPair(s.id, t.id, true)); return btn;
+      })]);
+      set('heatmap', table(['Perfil', ...d.estudantes.map(shortName)], rows, 'Similaridade entre todos os estudantes', 'heatmap'));
+    }
+    function selectPair(firstId, secondId, scroll = false) {
+      showView('calculos');
+      state.pairA = firstId;
+      state.pairB = secondId;
+      $('pair-a').value = firstId;
+      $('pair-b').value = secondId;
+      renderPair();
+      renderHeatmap();
+
+      if (!scroll) {
+        return;
+      }
+
+      $('pair-a').focus({ preventScroll: true });
+      $('pair-panel').scrollIntoView({
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'instant'
+          : 'smooth',
+        block: 'start'
+      });
+    }
+    function renderPair() {
+      const d = state.data, ai = d.estudantes.findIndex(s => s.id === state.pairA), bi = d.estudantes.findIndex(s => s.id === state.pairB), b = d.blocos[state.block];
+      $('pair-a').value = state.pairA; $('pair-b').value = state.pairB; $('block').value = state.block;
+      const rows = b.rotulos.map((name, k) => [name, b.vetores[ai][k], b.vetores[bi][k], b.vetores[ai][k] * b.vetores[bi][k], b.vetores[ai][k] ** 2, b.vetores[bi][k] ** 2]);
+      const normA = b.normas[ai], normB = b.normas[bi], dot = b.produtos_escalares[ai][bi], cos = b.similaridades[ai][bi];
+      const weights = Object.entries(EXPECTED_WEIGHTS).map(([key, w]) => [BLOCK_NAMES[key], percent(w), number(d.blocos[key].similaridades[ai][bi], 6), number(w * d.blocos[key].similaridades[ai][bi], 6)]);
+      set('pair-math', textP('A: ' + d.estudantes[ai].nome + ' · B: ' + d.estudantes[bi].nome + ' · ' + BLOCK_NAMES[state.block]), node('details', { class: 'vector-detail' }, node('summary', {}, 'Ver os valores de cada característica'), table(['Característica', 'A', 'B', 'A × B', 'A²', 'B²'], rows, 'Vetores alinhados e parcelas do produto escalar')), node('div', { class: 'steps' }, node('div', { class: 'step' }, helpButton('produto_escalar'), node('span', {}, '1. Produto escalar'), node('p', {}, 'A · B = Σ(Aₖ × Bₖ) = ' + number(dot, 6))), node('div', { class: 'step' }, helpButton('normas'), node('span', {}, '2. Normas dos vetores'), node('p', {}, '‖A‖ = √ΣAₖ² = ' + number(normA, 6)), node('p', {}, '‖B‖ = √ΣBₖ² = ' + number(normB, 6))), node('div', { class: 'step' }, helpButton('similaridade'), node('span', {}, '3. Cosseno'), node('p', {}, normA === 0 || normB === 0 ? 'Vetor vazio: adotamos cosseno 0, sem dividir por zero.' : number(dot, 6) + ' / (' + number(normA, 6) + ' × ' + number(normB, 6) + ') = ' + number(cos, 6)))), node('div', { class: 'mathbox' }, helpButton('similaridade'), node('span', { class: 'eyebrow' }, 'Similaridade usada pelo modelo'), node('p', { class: 'formula' }, state.mode === 'cosseno' ? 's(A,B) = cos(itens) = ' + number(d.modelos.cosseno.similaridades[ai][bi], 6) : 's(A,B) = Σ(peso do bloco × cosseno do bloco) = ' + number(d.modelos.hibrido.similaridades[ai][bi], 6)), textP(state.mode === 'cosseno' && state.block !== 'itens' ? 'Você está inspecionando outro bloco. No modo cosseno, somente o bloco de itens entra no ranking.' : 'A inspeção do bloco não altera os pesos nem o ranking.')), node('details', { class: 'hybrid-detail' }, node('summary', {}, 'Conferir a soma dos cinco blocos do híbrido'), table(['Bloco', 'Peso', 'Cosseno', 'Contribuição'], weights, 'Contribuições dos blocos para a similaridade híbrida'), textP('Soma das contribuições = ' + number(d.modelos.hibrido.similaridades[ai][bi], 6) + '. Blocos vazios contribuem com zero; os pesos permanecem fixos.')));
+    }
+    function renderQuality() {
+      if (!state.data) {
+        return;
+      }
+
+      const type = $('event-type').value;
+      const studentId = $('event-student').value;
+      const student = state.data.estudantes.find(
+        item => item.id === studentId
+      );
+      const studentName = student?.nome;
+      const events = state.data.qualidade.eventos.filter(event => {
+        const matchesType = type === 'all' || event.tipo === type;
+        const matchesStudent =
+          studentId === 'all' ||
+          event.estudante_id === studentId ||
+          event.ocorrencias?.some(item => item.aba === studentName);
+
+        return matchesType && matchesStudent;
+      });
+      const rows = events.map(event => [
+        EVENT_NAMES[event.tipo] ?? event.tipo,
+        event.aba ?? 'Entre abas',
+        event.linha ?? '—',
+        event.mensagem +
+        (event.chave ? ' Chave: ' + event.chave + '.' : '') +
+        (event.ocorrencias
+          ? ' Ocorrências: ' +
+          event.ocorrencias
+            .map(
+              occurrence =>
+                occurrence.aba +
+                ' / linha ' +
+                occurrence.linha +
+                ' / ' +
+                occurrence.categoria
+            )
+            .join('; ')
+          : '')
+      ]);
+
+      set(
+        'quality-events',
+        textP(events.length + ' evento(s) neste filtro.'),
+        rows.length
+          ? table(
+            ['Evento', 'Aba', 'Linha Excel', 'Decisão / observação'],
+            rows,
+            'Relatório de qualidade da planilha'
+          )
+          : node(
+            'div',
+            { class: 'empty' },
+            'Nenhum evento corresponde aos filtros.'
+          )
+      );
+    }
+    const MAX_DATA_BYTES = 20 * 1024 * 1024;
+    const DEFAULT_DATA_URL = new URL('./data.json', window.location.href);
+    let importSerial = 0;
+    let activeRequest = null;
+
+    function beginLoad(fileName) {
+      const serial = ++importSerial;
+      if (activeRequest) activeRequest.abort();
+      activeRequest = null;
+      $('workspace').setAttribute('aria-busy', 'true');
+      $('load-status').dataset.state = 'loading';
+      $('retry-data').hidden = true;
+      message('Carregando ' + fileName + '…');
+      return serial;
+    }
+    function useData(data, fileName) {
+      state.data = data;
+      populate();
+      $('file-info').textContent = 'Base: ' + fileName;
+      $('data-tools').open = false;
+      $('load-status').dataset.state = 'ready';
+      $('retry-data').hidden = true;
+      message('Dados carregados: ' + data.estudantes.length + ' estudantes e ' + data.metadados.registros + ' registros.');
+    }
+    function parseData(text) {
+      return validate(JSON.parse(text.replace(/^\uFEFF/, '')));
+    }
+    function loadError(error, fileName) {
+      let detail;
+      if (error instanceof SyntaxError) detail = 'JSON malformado. Gere novamente com recomendador.py.';
+      else if (error instanceof TypeError) detail = 'Falha de rede ao carregar ' + fileName + '. Verifique a conexão e tente novamente.';
+      else detail = error.message;
+      message('Não foi possível carregar: ' + detail + (state.data ? ' A base anterior continua aberta.' : ''), true);
+      $('load-status').dataset.state = 'error';
+      $('retry-data').hidden = !['http:', 'https:'].includes(location.protocol);
+      $('data-tools').open = true;
+      if (!state.data) {
+        $('initial-title').textContent = 'A base de dados não foi aberta';
+        $('initial-description').textContent = 'Tente novamente ou use “Abrir arquivo JSON”, no menu Trocar arquivo.';
+      }
+    }
+    async function readResponse(response) {
+      const declared = Number(response.headers.get('content-length'));
+      requireThat(!declared || declared <= MAX_DATA_BYTES, 'Arquivo acima de 20 MB. Use uma base menor para este painel.');
+      if (!response.body) return '';
+      const reader = response.body.getReader();
+      const chunks = [];
+      let size = 0;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > MAX_DATA_BYTES) {
+            await reader.cancel();
+            throw new Error('Arquivo acima de 20 MB. Use uma base menor para este painel.');
+          }
+          chunks.push(value);
+        }
+      } finally { reader.releaseLock(); }
+      return new Blob(chunks).text();
+    }
+    async function loadDefaultData() {
+      if (!['http:', 'https:'].includes(location.protocol)) return;
+      const serial = beginLoad('data.json');
+      const controller = new AbortController();
+      activeRequest = controller;
+      try {
+        const response = await fetch(DEFAULT_DATA_URL, { cache: 'no-store', signal: controller.signal });
+        if (response.status === 404) throw new Error('data.json não foi encontrado na mesma pasta da página.');
+        if (!response.ok) throw new Error('O servidor não abriu data.json (HTTP ' + response.status + ').');
+        const text = await readResponse(response);
+        if (serial !== importSerial) return;
+        const data = parseData(text);
+        useData(data, 'data.json');
+      } catch (error) {
+        if (serial === importSerial && error.name !== 'AbortError') loadError(error, 'data.json');
+      } finally {
+        if (serial === importSerial) {
+          activeRequest = null;
+          $('workspace').setAttribute('aria-busy', 'false');
+        }
+      }
+    }
+    $('arquivo').addEventListener('change', async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const serial = beginLoad(file.name);
+      try {
+        requireThat(file.size <= MAX_DATA_BYTES, 'Arquivo acima de 20 MB. Use uma base menor para este painel.');
+        const text = await file.text();
+        if (serial !== importSerial) return;
+        const data = parseData(text);
+        useData(data, file.name);
+      } catch (error) {
+        if (serial === importSerial) loadError(error, file.name);
+      } finally {
+        if (serial === importSerial) $('workspace').setAttribute('aria-busy', 'false');
+        event.target.value = '';
+      }
+    });
+    $('retry-data').addEventListener('click', loadDefaultData);
+    $('reload-data').addEventListener('click', loadDefaultData);
+    if (['http:', 'https:'].includes(location.protocol)) loadDefaultData();
+    else {
+      $('workspace').setAttribute('aria-busy', 'false');
+      $('load-status').dataset.state = 'local';
+      $('initial-title').textContent = 'Abra os dados da turma';
+      $('initial-description').textContent = 'Selecione data.json no menu Trocar arquivo. No site publicado, a base abre automaticamente.';
+      $('reload-data').hidden = true;
+      $('data-tools').open = true;
+      message('Selecione um arquivo JSON para consultar as recomendações.');
+    }
+    $('student').addEventListener('change', () => { state.student = $('student').value; state.pairA = state.student; state.pairB = state.data.modelos[state.mode].usuarios[state.student].vizinhos[0]?.id ?? state.student; render(); });
+    for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => { state.mode = b.dataset.mode; render(); });
+    $('top-n').addEventListener('change', () => { if (state.data) renderRecommendations(); });
+    for (const id of ['pair-a', 'pair-b']) $(id).addEventListener('change', () => { state.pairA = $('pair-a').value; state.pairB = $('pair-b').value; renderPair(); renderHeatmap(); });
+    $('block').addEventListener('change', () => { state.block = $('block').value; renderPair(); });
+    for (const id of ['event-type', 'event-student']) $(id).addEventListener('change', renderQuality);
+    set('weights', Object.entries(EXPECTED_WEIGHTS).map(([b, w]) => node('div', { class: 'weight' }, node('span', {}, BLOCK_NAMES[b]), node('div', { class: 'weight-value' }, helpButton('peso', BLOCK_NAMES[b] + ': ' + percent(w) + '.'), node('strong', { class: 'numeric' }, percent(w))))));
+  </script>
+</body>
+
+</html>
